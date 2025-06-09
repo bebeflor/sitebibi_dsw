@@ -1,0 +1,168 @@
+// Estrutura base do projeto React com Vite e funcionalidades da AV2
+
+// 1. src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { BrowserRouter } from 'react-router-dom';
+import './index.css';
+import { FavoritosProvider } from './context/FavoritosContext';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <FavoritosProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </FavoritosProvider>
+  </React.StrictMode>
+);
+
+
+// 2. src/context/FavoritosContext.jsx
+import { createContext, useState, useContext } from 'react';
+
+const FavoritosContext = createContext();
+
+export const FavoritosProvider = ({ children }) => {
+  const [favoritos, setFavoritos] = useState([]);
+
+  const toggleFavorito = (item) => {
+    const jaExiste = favoritos.find(f => f.id === item.id);
+    if (jaExiste) {
+      setFavoritos(favoritos.filter(f => f.id !== item.id));
+    } else {
+      setFavoritos([...favoritos, item]);
+    }
+  };
+
+  return (
+    <FavoritosContext.Provider value={{ favoritos, toggleFavorito }}>
+      {children}
+    </FavoritosContext.Provider>
+  );
+};
+
+export const useFavoritos = () => useContext(FavoritosContext);
+
+
+// 3. src/data/curiosidades.js (exemplo de dados)
+export const curiosidades = [
+  {
+    id: 1,
+    titulo: 'Gatos dormem muito',
+    texto: 'Os gatos dormem em média 13 a 16 horas por dia.',
+    imagem: 'https://placekitten.com/300/200'
+  },
+  {
+    id: 2,
+    titulo: 'Gatos ronronam por várias razões',
+    texto: 'Além de felizes, eles ronronam quando estão com dor ou nervosos.',
+    imagem: 'https://placekitten.com/301/200'
+  },
+  // Adicione mais...
+];
+
+
+// 4. src/components/CuriosidadeCard.jsx
+import { useFavoritos } from '../context/FavoritosContext';
+
+const CuriosidadeCard = ({ item }) => {
+  const { favoritos, toggleFavorito } = useFavoritos();
+  const favoritado = favoritos.some(f => f.id === item.id);
+
+  return (
+    <div className="border rounded-lg shadow p-4 bg-white">
+      <img src={item.imagem} alt={item.titulo} className="w-full h-48 object-cover rounded" />
+      <h2 className="text-xl font-bold mt-2">{item.titulo}</h2>
+      <p className="text-sm mt-1">{item.texto}</p>
+      <button
+        className={`mt-3 px-4 py-2 rounded ${favoritado ? 'bg-red-400' : 'bg-blue-400'} text-white`}
+        onClick={() => toggleFavorito(item)}
+      >
+        {favoritado ? 'Desfavoritar' : 'Favoritar'}
+      </button>
+    </div>
+  );
+};
+
+export default CuriosidadeCard;
+
+
+// 5. src/pages/Curiosidades.jsx
+import { curiosidades } from '../data/curiosidades';
+import CuriosidadeCard from '../components/CuriosidadeCard';
+
+const Curiosidades = () => {
+  return (
+    <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      {curiosidades.map(item => (
+        <CuriosidadeCard key={item.id} item={item} />
+      ))}
+    </div>
+  );
+};
+
+export default Curiosidades;
+
+
+// 6. src/pages/Favoritos.jsx
+import CuriosidadeCard from '../components/CuriosidadeCard';
+import { useFavoritos } from '../context/FavoritosContext';
+
+const Favoritos = () => {
+  const { favoritos } = useFavoritos();
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Seus Favoritos</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {favoritos.length > 0 ? favoritos.map(item => (
+          <CuriosidadeCard key={item.id} item={item} />
+        )) : <p>Nenhuma curiosidade favoritada ainda!</p>}
+      </div>
+    </div>
+  );
+};
+
+export default Favoritos;
+
+
+// 7. src/pages/Sobre.jsx
+const Sobre = () => {
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Sobre o Site</h1>
+      <p className="text-lg">Esse site foi criado com React e Context API para apresentar curiosidades sobre gatos, permitindo favoritar as mais interessantes.</p>
+    </div>
+  );
+};
+
+export default Sobre;
+
+
+// 8. src/App.jsx
+import { Routes, Route, Link } from 'react-router-dom';
+import Curiosidades from './pages/Curiosidades';
+import Favoritos from './pages/Favoritos';
+import Sobre from './pages/Sobre';
+
+const App = () => {
+  return (
+    <div>
+      <nav className="bg-gray-800 text-white p-4 flex gap-4">
+        <Link to="/" className="hover:underline">Curiosidades</Link>
+        <Link to="/favoritos" className="hover:underline">Favoritos</Link>
+        <Link to="/sobre" className="hover:underline">Sobre</Link>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Curiosidades />} />
+        <Route path="/favoritos" element={<Favoritos />} />
+        <Route path="/sobre" element={<Sobre />} />
+      </Routes>
+    </div>
+  );
+};
+
+export default App;
